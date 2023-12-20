@@ -2,44 +2,61 @@
 .STACK 100h
 
 .DATA
-    nums DW 11, 21, 31, 41, 51  ; list of numbers
-    squares DW 5 DUP(?)        ; Array to store their squares
-    result1 DB "The square of "
-    result2 DB " is $"
+    result1 DB "The number at 6800H: $"
+    result2 DB 10, "The square of "
+    result3 DB " is $"
 
 .CODE
 MAIN PROC
     MOV AX, @DATA
     MOV DS, AX
 
-    ; Calculate the squares and store them
+    ; Print the numbers at 6800H
     MOV CX, 5
-    MOV SI, 0
+    MOV SI, 6800H
+PRINT_NUMBERS:
+    LEA DX, result1
+    MOV AH, 9
+    INT 21h
+    MOV AX, [SI]   ; Load the number from memory
+    CALL PRINT_DEC
+    MOV DL, 10      ; Print a newline
+    MOV AH, 2
+    INT 21h
+    ADD SI, 2      ; Move to the next word
+    LOOP PRINT_NUMBERS
+
+    ; Calculate squares and store them in 8000H
+    MOV SI, 6800H  ; Point SI back to input numbers
+    MOV DI, 8000H  ; Point DI to output squares
+    MOV CX, 5
 SQUARE_LOOP:
-    MOV AX, nums[SI]
-    MUL AX      ; AX = AX * AX (square the number)
-    MOV squares[SI], AX
-    ADD SI, 2  ; Move to the next word in the array
+    MOV AX, [SI]   ; Load the number from memory
+    MUL AX         ; AX = AX * AX (square the number)
+    MOV [DI], AX   ; Store the square in memory
+    ADD SI, 2      ; Move to the next word in input
+    ADD DI, 2      ; Move to the next word in output
     LOOP SQUARE_LOOP
 
     ; Print the squares
     MOV CX, 5
-    MOV SI, 0
+    MOV SI, 6800H  ; Reset SI to the beginning of the input numbers
 PRINT_SQUARES:
-    LEA DX, result1
-    MOV AH, 9
-    INT 21h
-    MOV AX, nums[SI]
-    CALL PRINT_DEC  ; Print the original number
     LEA DX, result2
     MOV AH, 9
     INT 21h
-    MOV AX, squares[SI]
-    CALL PRINT_DEC  ; Print the square
-    MOV DL, 10      ; Print a newline
+    MOV AX, [SI]   ; Load the original number from memory
+    CALL PRINT_DEC
+    LEA DX, result3
+    MOV AH, 9
+    INT 21h
+    MOV AX, [DI]   ; Load the square from memory
+    CALL PRINT_DEC
+    MOV DL, 10     ; Print a newline
     MOV AH, 2
     INT 21h
-    ADD SI, 2  ; Move to the next word in the array
+    ADD SI, 2      ; Move to the next word in input
+    ADD DI, 2      ; Move to the next word in output
     LOOP PRINT_SQUARES
 
     MOV AH, 4Ch
